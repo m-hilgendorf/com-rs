@@ -71,7 +71,7 @@ pub fn generate(macro_attr: &TokenStream, interface_ident: &Ident) -> HelperToke
 
     quote!(
         #[allow(non_upper_case_globals)]
-        pub const #iid_ident: com::_winapi::shared::guiddef::GUID = com::_winapi::shared::guiddef::GUID {
+        pub const #iid_ident: com::GUID = com::GUID {
             Data1: #data1,
             Data2: #data2,
             Data3: #data3,

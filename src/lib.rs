@@ -1,12 +1,17 @@
-pub mod inproc;
 mod interface_ptr;
 mod interface_rc;
+mod types;
+use types::*;
+
 pub mod interfaces;
 pub mod offset;
+
+#[cfg(windows)]
 pub mod runtime;
 
+#[cfg(windows)]
+pub mod inproc;
 use interfaces::iunknown::IUnknown;
-use winapi::shared::guiddef::IID;
 
 pub use interface_ptr::InterfacePtr;
 pub use interface_rc::InterfaceRc;
@@ -63,6 +68,7 @@ macro_rules! vtable {
 
 // Export winapi for use by macros
 #[doc(hidden)]
+#[cfg(windows)]
 pub extern crate winapi as _winapi;
 
 #[doc(hidden)]

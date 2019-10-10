@@ -1,8 +1,5 @@
 use crate::com_interface;
-use winapi::{
-    ctypes::c_void,
-    shared::{guiddef::REFIID, ntdef::HRESULT},
-};
+use crate::types::{c_void, HRESULT, REFIID};
 
 #[com_interface(00000000-0000-0000-C000-000000000046)]
 pub trait IUnknown {

@@ -1,9 +1,8 @@
 use crate::{interface_ptr::InterfacePtr, interfaces::iunknown::IUnknown, ComInterface, IID};
 
+use crate::types::c_void;
+use crate::types::{E_NOINTERFACE, E_POINTER, FAILED};
 use std::marker::PhantomData;
-
-use winapi::ctypes::c_void;
-use winapi::shared::winerror::{E_NOINTERFACE, E_POINTER, FAILED};
 
 /// A reference counted COM interface. This smart pointer type automatically
 /// calls `AddRef` when cloned and `Release` when dropped.

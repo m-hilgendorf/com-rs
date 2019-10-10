@@ -1,3 +1,4 @@
+#![cfg(windows)]
 use winapi::{
     ctypes::c_void,
     shared::{

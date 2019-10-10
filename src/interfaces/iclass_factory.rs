@@ -1,13 +1,5 @@
 use crate::com_interface;
-use winapi::{
-    ctypes::c_void,
-    shared::{
-        guiddef::{IID, REFIID},
-        minwindef::BOOL,
-        ntdef::HRESULT,
-        winerror::FAILED,
-    },
-};
+use crate::types::{c_void, BOOL, FAILED, HRESULT, IID, REFIID};
 
 use crate::{
     interfaces::iunknown::{IUnknown, IUnknownVPtr},

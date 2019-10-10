@@ -1,5 +1,5 @@
+#![cfg(windows)]
 use crate::interfaces::iunknown::IUnknown;
-
 use winapi::{
     ctypes::c_void,
     shared::{
