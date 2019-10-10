@@ -155,7 +155,7 @@ fn gen_inner_query_interface(
 }
 
 /// For an aggregable object, we have to do more work here. We need to
-/// instantiate the non-delegating IUnknown vtable. The unsafe extern "stdcall"
+/// instantiate the non-delegating IUnknown vtable. The unsafe extern "system"
 /// methods belonging to the non-delegating IUnknown vtable are also defined here.
 fn gen_allocate_fn(
     aggr_map: &HashMap<Ident, Vec<Ident>>,
@@ -189,7 +189,7 @@ fn gen_allocate_fn(
     quote!(
         fn allocate(#allocate_parameters) -> Box<#struct_ident> {
             // Non-delegating methods.
-            unsafe extern "stdcall" fn non_delegatingegating_query_interface(
+            unsafe extern "system" fn non_delegatingegating_query_interface(
                 this: *mut *const <dyn com::interfaces::iunknown::IUnknown as com::ComInterface>::VTable,
                 riid: *const winapi::shared::guiddef::IID,
                 ppv: *mut *mut winapi::ctypes::c_void,
@@ -198,14 +198,14 @@ fn gen_allocate_fn(
                 (*this).inner_query_interface(riid, ppv)
             }
 
-            unsafe extern "stdcall" fn non_delegatingegating_add_ref(
+            unsafe extern "system" fn non_delegatingegating_add_ref(
                 this: *mut *const <dyn com::interfaces::iunknown::IUnknown as com::ComInterface>::VTable,
             ) -> u32 {
                 let this = this.sub(#non_delegating_iunknown_offset) as *mut #struct_ident;
                 (*this).inner_add_ref()
             }
 
-            unsafe extern "stdcall" fn non_delegatingegating_release(
+            unsafe extern "system" fn non_delegatingegating_release(
                 this: *mut *const <dyn com::interfaces::iunknown::IUnknown as com::ComInterface>::VTable,
             ) -> u32 {
                 let this = this.sub(#non_delegating_iunknown_offset) as *mut #struct_ident;

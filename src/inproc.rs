@@ -187,7 +187,7 @@ pub fn initialize_class_object<T: IUnknown>(
 macro_rules! inproc_dll_module {
     (($clsid_one:ident, $classtype_one:ty), $(($clsid:ident, $classtype:ty)),*) => {
         #[no_mangle]
-        extern "stdcall" fn DllGetClassObject(rclsid: $crate::_winapi::shared::guiddef::REFCLSID, riid: $crate::_winapi::shared::guiddef::REFIID, ppv: *mut $crate::_winapi::shared::minwindef::LPVOID) -> $crate::_winapi::shared::winerror::HRESULT {
+        extern "system" fn DllGetClassObject(rclsid: $crate::_winapi::shared::guiddef::REFCLSID, riid: $crate::_winapi::shared::guiddef::REFIID, ppv: *mut $crate::_winapi::shared::minwindef::LPVOID) -> $crate::_winapi::shared::winerror::HRESULT {
             use com::interfaces::iunknown::IUnknown;
             let rclsid = unsafe{ &*rclsid };
             if $crate::_winapi::shared::guiddef::IsEqualGUID(rclsid, &$clsid_one) {
@@ -202,7 +202,7 @@ macro_rules! inproc_dll_module {
         }
 
         #[no_mangle]
-        extern "stdcall" fn DllRegisterServer() -> $crate::_winapi::shared::winerror::HRESULT {
+        extern "system" fn DllRegisterServer() -> $crate::_winapi::shared::winerror::HRESULT {
             let hr = com::inproc::register_keys(get_relevant_registry_keys());
             if com::_winapi::shared::winerror::FAILED(hr) {
                 DllUnregisterServer();
@@ -212,7 +212,7 @@ macro_rules! inproc_dll_module {
         }
 
         #[no_mangle]
-        extern "stdcall" fn DllUnregisterServer() -> $crate::_winapi::shared::winerror::HRESULT {
+        extern "system" fn DllUnregisterServer() -> $crate::_winapi::shared::winerror::HRESULT {
             let mut registry_keys_to_remove = get_relevant_registry_keys();
             registry_keys_to_remove.reverse();
             com::inproc::unregister_keys(registry_keys_to_remove)

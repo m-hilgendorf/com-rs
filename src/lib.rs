@@ -23,7 +23,7 @@ pub use interface_rc::InterfaceRc;
 /// The trait or struct implementing this trait must provide a valid vtable as the
 /// associated VTable type. A vtable is valid if:
 /// * it is `#[repr(C)]`
-/// * the type only contains `extern "stdcall" fn" definitions
+/// * the type only contains `extern "system" fn" definitions
 pub unsafe trait ComInterface: IUnknown {
     type VTable;
     const IID: IID;
