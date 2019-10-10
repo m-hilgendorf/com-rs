@@ -1,3 +1,7 @@
+# Forked from com-rs
+
+This is a fork of [com-rs]() that's been modified to support COM APIs on non-Win32 targets. 
+
 # COM
 
 [![Build Status](https://dev.azure.com/microsoft-rust/com-rs/_apis/build/status/microsoft.com-rs?branchName=master)](https://dev.azure.com/microsoft-rust/com-rs/_build/latest?definitionId=1&branchName=master)
