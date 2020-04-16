@@ -16,6 +16,8 @@
 #![deny(missing_docs)]
 
 pub mod interfaces;
+mod types; 
+pub use types::*;
 #[doc(hidden)]
 pub mod offset;
 

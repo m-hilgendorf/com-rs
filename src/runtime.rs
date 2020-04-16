@@ -1,4 +1,3 @@
-<<<<<<< HEAD
 #![cfg(windows)]
 use winapi::{
     ctypes::c_void,
@@ -13,18 +12,8 @@ use winapi::{
         objbase::COINIT_APARTMENTTHREADED,
         unknwnbase::LPUNKNOWN,
     },
-=======
-//! COM runtime facilities
-//!
-//! This includes initializing the COM runtime as well as creating instances of CoClasses
-use crate::sys::{
-    CoCreateInstance, CoGetClassObject, CoIncrementMTAUsage, CoInitializeEx, CoUninitialize,
-    CLSCTX_INPROC_SERVER, CLSID, COINIT_APARTMENTTHREADED, COINIT_MULTITHREADED, FAILED, HRESULT,
-    IID, S_FALSE, S_OK,
->>>>>>> da0256bbf8cfc77f4665ec5d8263f5bc3710ecb0
 };
 use std::ffi::c_void;
-
 use crate::{CoClass, ComInterface, ComPtr, ComRc};
 
 /// Initialize a new multithreaded apartment (MTA) runtime. This will ensure
