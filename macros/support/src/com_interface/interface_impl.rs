@@ -18,11 +18,11 @@ pub fn generate(interface: &ItemTrait) -> HelperTokenStream {
     }
 
     quote! {
-        impl <T: #interface_ident + com::ComInterface + ?Sized> #interface_ident for com::InterfaceRc<T> {
+        impl <T: #interface_ident + com::ComInterface + ?Sized> #interface_ident for com::ComRc<T> {
             #(#impl_methods)*
         }
 
-        impl <T: #interface_ident + com::ComInterface + ?Sized> #interface_ident for com::InterfacePtr<T> {
+        impl <T: #interface_ident + com::ComInterface + ?Sized> #interface_ident for com::ComPtr<T> {
             #(#impl_methods)*
         }
     }
@@ -47,9 +47,10 @@ fn gen_impl_method(interface_ident: &Ident, method: &TraitItemMethod) -> HelperT
     }
 
     quote!(
+        #[allow(missing_docs)]
         #method_sig {
             let #interface_ptr_ident = self.as_raw() as *mut #vptr_ident;
-            unsafe { ((**#interface_ptr_ident).#method_ident)(#(#params),*) }
+            ((**#interface_ptr_ident).#method_ident)(#(#params),*)
         }
     )
 }

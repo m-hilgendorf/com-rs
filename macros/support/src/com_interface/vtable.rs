@@ -20,27 +20,33 @@ pub fn generate(interface: &ItemTrait) -> HelperTokenStream {
     } else {
         assert!(
             !(interface.supertraits.len() > 1),
-            "Multiple inheirtance is not supported in COM interfaces"
+            "Multiple inheritance is not supported in COM interfaces"
         );
         assert!(
             interface.supertraits.len() != 0,
             "All interfaces must inherit from another COM interface"
         );
 
-        let base_interface_ident = match interface.supertraits.first().unwrap() {
-            TypeParamBound::Trait(t) => t.path.get_ident().unwrap(),
+        let base_interface_path = match interface.supertraits.first().expect("No supertraits") {
+            TypeParamBound::Trait(path) => path,
             _ => panic!("Unhandled super trait typeparambound"),
         };
 
-        let base_field_ident = base_field_ident(&base_interface_ident.to_string());
+        let last_ident = &base_interface_path
+            .path
+            .segments
+            .last()
+            .expect("Supertrait has empty path")
+            .ident;
+        let base_field_ident = base_field_ident(&last_ident.to_string());
         quote! {
-            pub #base_field_ident: <dyn #base_interface_ident as com::ComInterface>::VTable,
+            pub #base_field_ident: <dyn #base_interface_path as com::ComInterface>::VTable,
         }
     };
     let methods = gen_vtable_methods(&interface);
 
     quote!(
-        #[allow(non_snake_case)]
+        #[allow(non_snake_case, missing_docs)]
         #[repr(C)]
         #[derive(com::VTable)]
         pub struct #vtable_ident {
@@ -73,6 +79,10 @@ fn gen_vtable_methods(interface: &ItemTrait) -> HelperTokenStream {
 }
 
 fn gen_vtable_method(interface_ident: &Ident, method: &TraitItemMethod) -> HelperTokenStream {
+    assert!(
+        method.sig.unsafety.is_some(),
+        "COM Interface methods must be declared unsafe"
+    );
     let method_ident = format_ident!(
         "{}",
         crate::utils::snake_to_camel(&method.sig.ident.to_string())
@@ -99,6 +109,7 @@ fn gen_vtable_function_signature(
 fn gen_raw_params(interface_ident: &Ident, method: &TraitItemMethod) -> HelperTokenStream {
     let mut params = Vec::new();
     let vptr_ident = vptr::ident(&interface_ident.to_string());
+
     for param in method.sig.inputs.iter() {
         match param {
             FnArg::Receiver(s) => {

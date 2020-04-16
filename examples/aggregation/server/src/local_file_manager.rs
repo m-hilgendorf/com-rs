@@ -1,8 +1,7 @@
 use interface::ilocal_file_manager::ILocalFileManager;
 
-use winapi::shared::winerror::{HRESULT, NOERROR};
-
 use com::co_class;
+use com::sys::{HRESULT, NOERROR};
 
 /// The implementation class
 #[co_class(implements(ILocalFileManager), aggregatable)]
@@ -11,7 +10,7 @@ pub struct LocalFileManager {
 }
 
 impl ILocalFileManager for LocalFileManager {
-    fn delete_local(&self) -> HRESULT {
+    unsafe fn delete_local(&self) -> HRESULT {
         println!("Deleting Locally...");
         NOERROR
     }

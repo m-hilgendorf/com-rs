@@ -84,11 +84,11 @@ pub fn gen_allocate_user_fields(struct_item: &ItemStruct) -> HelperTokenStream {
         _ => panic!("Found non Named fields in struct."),
     };
     let field_idents = fields.iter().map(|field| {
-        let field_ident = field.ident.as_ref().unwrap().clone();
+        let field_ident = field.ident.as_ref().expect("Field has no ident").clone();
         quote!(#field_ident)
     });
 
-    quote!(#(#field_idents)*)
+    quote!(#(#field_idents,)*)
 }
 
 // Reference count field initialisation.
@@ -150,8 +150,8 @@ pub fn gen_set_aggregate_fns(aggr_map: &HashMap<Ident, Vec<Ident>>) -> HelperTok
         for base in aggr_base_interface_idents {
             let set_aggregate_fn_ident = crate::utils::set_aggregate_fn_ident(&base);
             fns.push(quote!(
-                fn #set_aggregate_fn_ident(&mut self, aggr: com::InterfacePtr<dyn com::interfaces::iunknown::IUnknown>) {
-                    // TODO: What happens if we are overwriting an existing aggregate?
+                fn #set_aggregate_fn_ident(&mut self, aggr: com::ComPtr<dyn com::interfaces::iunknown::IUnknown>) {
+                    // FaTODO: What happens if we are overwriting an existing aggregate?
                     self.#aggr_field_ident = aggr.as_raw() as *mut *const <dyn com::interfaces::iunknown::IUnknown as com::ComInterface>::VTable;
                 }
             ));

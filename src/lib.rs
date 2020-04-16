@@ -1,20 +1,35 @@
-mod interface_ptr;
-mod interface_rc;
-mod types;
-use types::*;
+//! A helper crate for consuming and producing COM interfaces.
+//!
+//! # Example
+//!
+//! To work with a COM interface it must first be declared:
+//!
+//! ```rust,no_run
+//! /// Define an IAnimal interface wit
+//! #[com::com_interface("EFF8970E-C50F-45E0-9284-291CE5A6F771")]
+//! pub trait IAnimal: com::interfaces::IUnknown {
+//!     unsafe fn eat(&self) -> com::sys::HRESULT;
+//! }
+//! ```
+//!
+
+#![deny(missing_docs)]
 
 pub mod interfaces;
+#[doc(hidden)]
 pub mod offset;
 
 #[cfg(windows)]
 pub mod runtime;
+pub mod sys;
+mod rc; 
+mod ptr; 
 
-#[cfg(windows)]
-pub mod inproc;
-use interfaces::iunknown::IUnknown;
-
-pub use interface_ptr::InterfacePtr;
-pub use interface_rc::InterfaceRc;
+use interfaces::IUnknown;
+pub use ptr::ComPtr;
+pub use rc::ComRc;
+#[doc(inline)]
+pub use sys::{CLSID, IID};
 
 /// A COM compliant interface
 ///
@@ -24,11 +39,20 @@ pub use interface_rc::InterfaceRc;
 /// associated VTable type. A vtable is valid if:
 /// * it is `#[repr(C)]`
 /// * the type only contains `extern "system" fn" definitions
-pub unsafe trait ComInterface: IUnknown {
+pub unsafe trait ComInterface: IUnknown + 'static {
+    /// A COM compatible V-Table
     type VTable;
+    /// The interface that this interface inherits from
+    type Super: ComInterface + ?Sized;
+    /// The associated id for this interface
     const IID: IID;
 
-    fn is_iid_in_inheritance_chain(riid: &IID) -> bool;
+    /// Check whether a given IID is in the inheritance hierarchy of this interface
+    fn is_iid_in_inheritance_chain(riid: &IID) -> bool {
+        riid == &Self::IID
+            || (Self::IID != <dyn IUnknown as ComInterface>::IID
+                && <Self::Super as ComInterface>::is_iid_in_inheritance_chain(riid))
+    }
 }
 
 /// A COM compliant class
@@ -41,16 +65,25 @@ pub unsafe trait ComInterface: IUnknown {
 /// each of the COM Interfaces the class implements
 pub unsafe trait CoClass: IUnknown {}
 
+/// A COM interface that will be exposed in a COM server
 pub trait ProductionComInterface<T: IUnknown>: ComInterface {
+    /// Get the vtable for a particular COM interface
     fn vtable<O: offset::Offset>() -> Self::VTable;
 }
 
+#[doc(hidden)]
 #[macro_export]
 macro_rules! vtable {
     ($class:ident: $interface:ident, $offset:ident) => {
         <dyn $interface as $crate::ProductionComInterface<$class>>::vtable::<
             $crate::offset::$offset,
         >();
+    };
+    ($class:ident: $interface:ident, 4usize) => {
+        $crate::vtable!($class: $interface, Four)
+    };
+    ($class:ident: $interface:ident, 3usize) => {
+        $crate::vtable!($class: $interface, Three)
     };
     ($class:ident: $interface:ident, 2usize) => {
         $crate::vtable!($class: $interface, Two)
@@ -65,11 +98,6 @@ macro_rules! vtable {
         $crate::vtable!($class: $interface, Zero)
     };
 }
-
-// Export winapi for use by macros
-#[doc(hidden)]
-#[cfg(windows)]
-pub extern crate winapi as _winapi;
 
 #[doc(hidden)]
 pub use com_macros::{co_class, com_interface, VTable};

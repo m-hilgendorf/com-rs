@@ -35,18 +35,18 @@ pub fn generate(struct_item: &ItemStruct) -> HelperTokenStream {
     quote! {
         #struct_definition
 
-        impl com::interfaces::iclass_factory::IClassFactory for #class_factory_ident {
+        impl com::interfaces::IClassFactory for #class_factory_ident {
             unsafe fn create_instance(
                 &self,
                 aggr: *mut *const <dyn com::interfaces::iunknown::IUnknown as com::ComInterface>::VTable,
-                riid: winapi::shared::guiddef::REFIID,
-                ppv: *mut *mut winapi::ctypes::c_void,
-            ) -> winapi::shared::winerror::HRESULT {
+                riid: *const com::sys::IID,
+                ppv: *mut *mut std::ffi::c_void,
+            ) -> com::sys::HRESULT {
                 // Bringing trait into scope to access IUnknown methods.
                 use com::interfaces::iunknown::IUnknown;
 
                 if aggr != std::ptr::null_mut() {
-                    return winapi::shared::winerror::CLASS_E_NOAGGREGATION;
+                    return com::sys::CLASS_E_NOAGGREGATION;
                 }
 
                 let mut instance = #struct_ident::new();
@@ -84,8 +84,8 @@ pub fn gen_class_factory_struct_definition(class_factory_ident: &Ident) -> Helpe
 pub fn gen_lock_server() -> HelperTokenStream {
     quote! {
         // TODO: Implement correctly
-        fn lock_server(&self, _increment: winapi::shared::minwindef::BOOL) -> winapi::shared::winerror::HRESULT {
-            winapi::shared::winerror::S_OK
+        unsafe fn lock_server(&self, _increment: com::sys::BOOL) -> com::sys::HRESULT {
+            com::sys::S_OK
         }
     }
 }
@@ -99,7 +99,7 @@ pub fn gen_iunknown_impl(
     let add_ref = super::iunknown_impl::gen_add_ref();
     let release = gen_release(&base_interface_idents, &aggr_map, class_factory_ident);
     quote! {
-        impl com::interfaces::iunknown::IUnknown for #class_factory_ident {
+        impl com::interfaces::IUnknown for #class_factory_ident {
             #query_interface
             #add_ref
             #release
@@ -143,18 +143,18 @@ fn gen_query_interface() -> HelperTokenStream {
     let vptr_field_ident = crate::utils::vptr_field_ident(&get_iclass_factory_interface_ident());
 
     quote! {
-        unsafe fn query_interface(&self, riid: *const winapi::shared::guiddef::IID, ppv: *mut *mut winapi::ctypes::c_void) -> winapi::shared::winerror::HRESULT {
+        unsafe fn query_interface(&self, riid: *const com::sys::IID, ppv: *mut *mut std::ffi::c_void) -> com::sys::HRESULT {
             // Bringing trait into scope to access add_ref method.
             use com::interfaces::iunknown::IUnknown;
 
             let riid = &*riid;
-            if winapi::shared::guiddef::IsEqualGUID(riid, &<dyn com::interfaces::iunknown::IUnknown as com::ComInterface>::IID) | winapi::shared::guiddef::IsEqualGUID(riid, &<dyn com::interfaces::iclass_factory::IClassFactory as com::ComInterface>::IID) {
-                *ppv = &self.#vptr_field_ident as *const _ as *mut winapi::ctypes::c_void;
+            if riid == &<dyn com::interfaces::iunknown::IUnknown as com::ComInterface>::IID || riid == &<dyn com::interfaces::iclass_factory::IClassFactory as com::ComInterface>::IID {
+                *ppv = &self.#vptr_field_ident as *const _ as *mut std::ffi::c_void;
                 self.add_ref();
-                winapi::shared::winerror::NOERROR
+                com::sys::NOERROR
             } else {
-                *ppv = std::ptr::null_mut::<winapi::ctypes::c_void>();
-                winapi::shared::winerror::E_NOINTERFACE
+                *ppv = std::ptr::null_mut::<std::ffi::c_void>();
+                com::sys::E_NOINTERFACE
             }
         }
     }

@@ -8,26 +8,26 @@ use syn::ItemStruct;
 pub fn generate(struct_item: &ItemStruct) -> HelperTokenStream {
     let struct_ident = &struct_item.ident;
     let iunknown_to_use_field_ident = crate::utils::iunknown_to_use_field_ident();
-    let ptr_casting = quote! { as *mut winapi::ctypes::c_void };
+    let ptr_casting = quote! { as *mut _ };
 
     quote!(
-        impl com::interfaces::iunknown::IUnknown for #struct_ident {
+        impl com::interfaces::IUnknown for #struct_ident {
             unsafe fn query_interface(
                 &self,
-                riid: *const winapi::shared::guiddef::IID,
-                ppv: *mut *mut winapi::ctypes::c_void
-            ) -> winapi::shared::winerror::HRESULT {
-                let iunknown_to_use = com::InterfacePtr::<dyn com::interfaces::iunknown::IUnknown>::new(self.#iunknown_to_use_field_ident #ptr_casting);
+                riid: *const com::sys::IID,
+                ppv: *mut *mut std::ffi::c_void
+            ) -> com::sys::HRESULT {
+                let iunknown_to_use = com::ComPtr::<dyn com::interfaces::IUnknown>::new(self.#iunknown_to_use_field_ident #ptr_casting);
                 iunknown_to_use.query_interface(riid, ppv)
             }
 
-            fn add_ref(&self) -> u32 {
-                let iunknown_to_use  = unsafe { com::InterfacePtr::<dyn com::interfaces::iunknown::IUnknown>::new(self.#iunknown_to_use_field_ident #ptr_casting) };
+            unsafe fn add_ref(&self) -> u32 {
+                let iunknown_to_use  = unsafe { com::ComPtr::<dyn com::interfaces::IUnknown>::new(self.#iunknown_to_use_field_ident #ptr_casting) };
                 iunknown_to_use.add_ref()
             }
 
             unsafe fn release(&self) -> u32 {
-                let iunknown_to_use = com::InterfacePtr::<dyn com::interfaces::iunknown::IUnknown>::new(self.#iunknown_to_use_field_ident #ptr_casting);
+                let iunknown_to_use = com::ComPtr::<dyn com::interfaces::IUnknown>::new(self.#iunknown_to_use_field_ident #ptr_casting);
                 iunknown_to_use.release()
             }
         }

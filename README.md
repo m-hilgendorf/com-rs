@@ -6,10 +6,14 @@ This is a fork of [com-rs]() that's been modified to support COM APIs on non-Win
 
 [![Build Status](https://dev.azure.com/microsoft-rust/com-rs/_apis/build/status/microsoft.com-rs?branchName=master)](https://dev.azure.com/microsoft-rust/com-rs/_build/latest?definitionId=1&branchName=master)
 [![Gitter](https://badges.gitter.im/com-rs/community.svg)](https://gitter.im/com-rs/community?utm_source=badge&utm_medium=badge&utm_campaign=pr-badge)
+[![Docs.rs](https://docs.rs/com/badge.svg)](https://docs.rs/crate/com/)
 
 A one stop shop for all things related to [COM](https://docs.microsoft.com/en-us/windows/win32/com/component-object-model--com--portal) programming in Rust.
 
 This library exposes various macros, structs and functions to the user for both producing and consuming COM components in an idiomatic manner.
+
+:rotating_light: :rotating_light: :rotating_light: **NOTE** This crate is currently in heavy development as we decide on a stable API. :rotating_light:
+:rotating_light: :rotating_light:
 
 ## What is COM?
 
@@ -24,43 +28,42 @@ COM has been superseded by [WinRT](https://docs.microsoft.com/en-us/windows/uwp/
 To both consume or produce a COM component through an interface, you will first need to generate the Rust representation of said interface. The `com_interface` macro is the main tool for automatically generating this Rust representation.
 
 ```rust
-#[com_interface(00000000-0000-0000-C000-000000000046)]
+#[com_interface("00000000-0000-0000-C000-000000000046")]
 pub trait IUnknown {
     unsafe fn query_interface(
         &self,
-        riid: winapi::shared::guiddef::REFIID,
-        ppv: *mut *mut winapi::ctypes::c_void
-    ) -> winapi::shared::winerror::HRESULT;
+        riid: *const IID,
+        ppv: *mut *mut c_void
+    ) -> HRESULT;
     fn add_ref(&self) -> u32;
     unsafe fn release(&self) -> u32;
 }
 
-#[com_interface(EFF8970E-C50F-45E0-9284-291CE5A6F771)]
+#[com_interface("EFF8970E-C50F-45E0-9284-291CE5A6F771")]
 pub trait IAnimal: IUnknown {
-    fn eat(&self) -> HRESULT;
+    unsafe fn eat(&self) -> HRESULT;
 }
-
 ```
 
-Short explanation: This generates the VTable layout for IUnknown and implements the trait on `com::InterfaceRc` so that it dereferences the correct function pointer entry within the VTable.
+Short explanation: This generates the VTable layout for IUnknown and implements the trait on `com::ComRc` so that it dereferences the correct function pointer entry within the VTable.
 
 ### Consuming a COM component
 
-Interaction with COM components are always through an Interface Pointer (a pointer to a pointer to a VTable). We represent such an Interface Pointer with the `com::InterfaceRc` struct, which helps manage the lifetime of the COM component through IUnknown methods.
+Interaction with COM components are always through an Interface Pointer (a pointer to a pointer to a VTable). We represent such an Interface Pointer with the `com::ComRc` struct, which helps manage the lifetime of the COM component through IUnknown methods.
 
 ```rust
-use com::runtime::ApartmentThreadedRuntime as Runtime;
+use com::run_time::{create_instance, init_runtime};
 
 // Initialises the COM library
-let runtime = Runtime::new().expect("Failed to initialize COM Library");
+init_runtime().expect("Failed to initialize COM Library");
 
 // Get a COM instance's interface pointer, by specifying
 // - The CLSID of the COM component
 // - The interface of the COM component that you want
-// runtime.create_instance returns a InterfaceRc<dyn IAnimal> in this case.
-let mut cat = runtime.create_instance::<dyn IAnimal>(&CLSID_CAT_CLASS).expect("Failed to get a cat");
+// create_instance returns a ComRc<dyn IAnimal> in this case.
+let mut cat = create_instance::<dyn IAnimal>(&CLSID_CAT_CLASS).expect("Failed to get a cat");
 
-// All IAnimal methods will be defined on InterfaceRc<T: IAnimal>
+// All IAnimal methods will be defined on ComRc<T: IAnimal>
 cat.eat();
 ```
 
@@ -75,7 +78,7 @@ Producing a COM component is relatively complicated compared to consumption, due
 ```rust
 use com::co_class;
 
-#[co_class(implements(ICat, IDomesticAnimal)]
+#[co_class(implements(ICat, IDomesticAnimal))]
 pub struct BritishShortHairCat {
     num_owners: u32,
 }
@@ -85,21 +88,21 @@ pub struct BritishShortHairCat {
 
 ```rust
 impl IDomesticAnimal for BritishShortHairCat {
-    fn train(&self) -> HRESULT {
+    unsafe fn train(&self) -> HRESULT {
         println!("Training...");
         NOERROR
     }
 }
 
 impl ICat for BritishShortHairCat {
-    fn ignore_humans(&self) -> HRESULT {
+    unsafe fn ignore_humans(&self) -> HRESULT {
         println!("Ignoring Humans...");
         NOERROR
     }
 }
 
 impl IAnimal for BritishShortHairCat {
-    fn eat(&self) -> HRESULT {
+    unsafe fn eat(&self) -> HRESULT {
         println!("Eating...");
         NOERROR
     }
@@ -169,10 +172,6 @@ This project has adopted the [Microsoft Open Source Code of Conduct](https://ope
 **Is there IDL support?**
 
 As a foundation, we are attempting to create a library that doesn't necessarily rely on having an IDL file. However, it is in the pipeline for future improvements. We will have a command-line tool that will parse the IDL into the required macros.
-
-**Which threading models do this library support?**
-
-As of v0.1, this library is only confident of consuming/producing COM components that live in Single-Threaded Apartments (STA). This Threading Model assumption is used in several places, so producing/consuming these COM components in a Multi-Threaded environment will not work.
 
 **Is there out-of-process COM support?**
 

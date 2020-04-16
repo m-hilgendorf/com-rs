@@ -4,7 +4,9 @@ use quote::{format_ident, quote};
 use syn::LitInt;
 
 pub fn generate(macro_attr: &TokenStream, interface_ident: &Ident) -> HelperTokenStream {
-    let iid_value = macro_attr.to_string().replace(' ', "");
+    let iid_string: syn::LitStr =
+        syn::parse(macro_attr.clone()).expect("[com_interface] parameter must be a GUID string");
+    let iid_value = iid_string.value();
     assert!(
         iid_value.len() == 36,
         "IIDs must be exactly 36 characters long"
@@ -70,12 +72,12 @@ pub fn generate(macro_attr: &TokenStream, interface_ident: &Ident) -> HelperToke
     let data4_8 = LitInt::new(format!("0x{}", data4_8).as_str(), Span::call_site());
 
     quote!(
-        #[allow(non_upper_case_globals)]
-        pub const #iid_ident: com::GUID = com::GUID {
-            Data1: #data1,
-            Data2: #data2,
-            Data3: #data3,
-            Data4: [#data4_1, #data4_2, #data4_3, #data4_4, #data4_5, #data4_6, #data4_7, #data4_8]
+        #[allow(non_upper_case_globals, missing_docs)]
+        pub const #iid_ident: com::sys::IID = com::sys::IID {
+            data1: #data1,
+            data2: #data2,
+            data3: #data3,
+            data4: [#data4_1, #data4_2, #data4_3, #data4_4, #data4_5, #data4_6, #data4_7, #data4_8]
         };
     )
 }

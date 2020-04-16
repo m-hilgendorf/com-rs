@@ -5,7 +5,8 @@ use syn::ItemStruct;
 // We manually generate a ClassFactory without macros, otherwise
 // it leads to an infinite loop.
 pub fn generate(struct_item: &ItemStruct) -> HelperTokenStream {
-    let base_interface_idents = crate::co_class::class_factory::get_class_factory_base_interface_idents();
+    let base_interface_idents =
+        crate::co_class::class_factory::get_class_factory_base_interface_idents();
     let aggr_map = crate::co_class::class_factory::get_class_factory_aggr_map();
 
     let struct_ident = &struct_item.ident;
@@ -27,23 +28,23 @@ pub fn generate(struct_item: &ItemStruct) -> HelperTokenStream {
     quote! {
         #struct_definition
 
-        impl com::interfaces::iclass_factory::IClassFactory for #class_factory_ident {
+        impl com::interfaces::IClassFactory for #class_factory_ident {
             unsafe fn create_instance(
                 &self,
                 aggr: *mut *const <dyn com::interfaces::iunknown::IUnknown as com::ComInterface>::VTable,
-                riid: winapi::shared::guiddef::REFIID,
-                ppv: *mut *mut winapi::ctypes::c_void,
-            ) -> winapi::shared::winerror::HRESULT {
+                riid: *const com::sys::IID,
+                ppv: *mut *mut std::ffi::c_void,
+            ) -> com::sys::HRESULT {
                 // Bringing trait into scope to access IUnknown methods.
                 use com::interfaces::iunknown::IUnknown;
 
                 let riid = unsafe { &*riid };
 
-                if !aggr.is_null() && !winapi::shared::guiddef::IsEqualGUID(riid, &<dyn com::interfaces::iunknown::IUnknown as com::ComInterface>::IID) {
+                if !aggr.is_null() && riid != &<dyn com::interfaces::iunknown::IUnknown as com::ComInterface>::IID {
                     unsafe {
-                        *ppv = std::ptr::null_mut::<winapi::ctypes::c_void>();
+                        *ppv = std::ptr::null_mut::<std::ffi::c_void>();
                     }
-                    return winapi::shared::winerror::E_INVALIDARG;
+                    return com::sys::E_INVALIDARG;
                 }
 
                 let mut instance = #struct_ident::new();
