@@ -51,6 +51,8 @@ pub unsafe trait ComInterface: IUnknown + 'static {
 
     /// Check whether a given IID is in the inheritance hierarchy of this interface
     fn is_iid_in_inheritance_chain(riid: &IID) -> bool {
+        // println!("this: {:X}-{:X}-{:X}-{:?}", Self::IID.data1, Self::IID.data2, Self::IID.data3, Self::IID.data4);
+        // println!("that: {:X}-{:X}-{:X}-{:?}", riid.data1, riid.data2, riid.data3, riid.data4);
         riid == &Self::IID
             || (Self::IID != <dyn IUnknown as ComInterface>::IID
                 && <Self::Super as ComInterface>::is_iid_in_inheritance_chain(riid))

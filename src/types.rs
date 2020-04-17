@@ -17,14 +17,18 @@ pub use winapi::{
 #[cfg(not(windows))]
 pub mod xplatform {
     pub use std::os::raw::{c_int, c_long, c_ulong, c_void};
-
-    #[repr(C)]
-    #[derive(Copy, Clone, Debug)]
+    
+    #[repr(align(16))]
+    #[derive(Copy, Clone)]
     pub struct GUID {
-        pub Data1: c_ulong,
-        pub Data2: c_ulong,
-        pub Data3: c_ulong,
-        pub Data4: [u8; 8],
+        #[allow(missing_docs)]
+        pub data1: u32,
+        #[allow(missing_docs)]
+        pub data2: u16,
+        #[allow(missing_docs)]
+        pub data3: u16,
+        #[allow(missing_docs)]
+        pub data4: [u8; 8],
     }
 
     pub type IID = GUID;
